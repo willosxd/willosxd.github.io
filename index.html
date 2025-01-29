@@ -1,7 +1,8 @@
 <html lang="es">
-<head><base href="https://example.com"/>
+<head>
+    <base href="https://example.com"/>
     <meta charset="UTF-8">
-    <title>Ratón Sigue Ratón con Estrellas Giratorias</title>
+    <title>RandoApp</title>
     <style>
         body {
             margin: 0;
@@ -84,16 +85,182 @@
         }
         #score-display {
             position: fixed;
-            top: 10px;
+            top: 50px;
             right: 10px;
             background-color: white;
             padding: 10px;
             border-radius: 5px;
             font-weight: bold;
         }
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            z-index: 1500;
+        }
+        .menu-logo {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .menu-options {
+            display: flex;
+            gap: 20px;
+        }
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .menu-btn:hover {
+            color: #4CAF50;
+        }
+        #instructions-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 2500;
+            justify-content: center;
+            align-items: center;
+        }
+        #instructions-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+        }
+        #instructions-modal.active {
+            display: flex;
+        }
+        .blue-triangle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            background-color: blue;
+            transition: transform 2s linear;
+        }
+        #hallway-scene {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            perspective: 1500px;  
+            overflow: hidden;
+            z-index: 3000;
+        }
+        .hallway {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9));
+            transform-style: preserve-3d;
+            transform: translateZ(-300px);
+            transition: transform 1s ease-in-out;
+        }
+        .hallway-walking {
+            animation: walkHallway 2s linear infinite;
+        }
+        @keyframes walkHallway {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        .hallway-wall {
+            position: absolute;
+            background-color: rgba(50,50,50,0.5);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            transition: transform 0.5s ease-out;
+        }
+        .hallway-wall-left {
+            width: 50px;
+            height: 100%;
+            left: 0;
+            background: linear-gradient(to right, rgba(30,30,30,0.9), rgba(50,50,50,0.7));
+            transform: rotateY(-15deg) translateZ(-50px);  
+        }
+        .hallway-wall-right {
+            width: 50px;
+            height: 100%;
+            right: 0;
+            background: linear-gradient(to left, rgba(30,30,30,0.9), rgba(50,50,50,0.7));
+            transform: rotateY(15deg) translateZ(-50px);  
+        }
+        .hallway-floor {
+            width: 100%;
+            height: 100px;
+            bottom: 0;
+            background: linear-gradient(rgba(20,20,20,0.9), rgba(40,40,40,0.7));
+            transform: rotateX(90deg) translateZ(50px);
+            box-shadow: 0 -10px 50px rgba(0,0,0,0.5);  
+        }
+        .hallway-ceiling {
+            width: 100%;
+            height: 100px;
+            top: 0;
+            background: linear-gradient(rgba(10,10,10,0.9), rgba(30,30,30,0.7));
+            transform: rotateX(-90deg) translateZ(50px);
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);  
+        }
+        .hallway-exit {
+            position: absolute;
+            width: 200px;
+            height: 300px;
+            background: linear-gradient(rgba(100,100,100,0.3), rgba(200,200,200,0.2));
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(300px);
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 0 100px rgba(255,255,255,0.2);
+            transition: opacity 1s ease-in-out;
+        }
+        /* Add subtle light rays */
+        .light-ray {
+            position: absolute;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(transparent, rgba(255,255,255,0.1), transparent);
+            opacity: 0.3;
+            transform: rotate(45deg);
+        }
     </style>
 </head>
 <body>
+    <div class="menu-bar">
+        <div class="menu-logo">RandoApp</div>
+        <div class="menu-options">
+            <button class="menu-btn" id="instructions-btn">Instrucciones</button>
+            <button class="menu-btn" id="restart-btn">Reiniciar</button>
+            <button class="menu-btn" id="max-score-btn">Máximo: 0</button>
+        </div>
+    </div>
+
+    <div id="instructions-modal" class="active">
+        <div id="instructions-content">
+            <h2>Instrucciones del Juego</h2>
+            <p>Mueve el cursor para esquivar los cuadrados rojos y recoger las estrellas amarillas.</p>
+            <p>¡No toques los cuadrados rojos o perderás!</p>
+            <p>Los triángulos azules pueden darte puntos extra.</p>
+            <button id="close-instructions">Comenzar Juego</button>
+        </div>
+    </div>
+
     <div class="mouse-cursor" id="followMouse"></div>
     
     <div id="game-over-screen">
@@ -105,6 +272,26 @@
 
     <div id="score-display">Estrellas Tocadas: 0</div>
 
+    <div id="hallway-scene">
+        <div class="hallway" id="hallwayElement">
+            <div class="hallway-wall hallway-wall-left">
+                <!-- Light rays for left wall -->
+                <div class="light-ray" style="left: 20%;"></div>
+                <div class="light-ray" style="left: 50%;"></div>
+                <div class="light-ray" style="left: 80%;"></div>
+            </div>
+            <div class="hallway-wall hallway-wall-right">
+                <!-- Light rays for right wall -->
+                <div class="light-ray" style="right: 20%;"></div>
+                <div class="light-ray" style="right: 50%;"></div>
+                <div class="light-ray" style="right: 80%;"></div>
+            </div>
+            <div class="hallway-floor"></div>
+            <div class="hallway-ceiling"></div>
+            <div class="hallway-exit"></div>
+        </div>
+    </div>
+
     <script>
         const mouseCursor = document.getElementById('followMouse');
         const gameOverScreen = document.getElementById('game-over-screen');
@@ -112,8 +299,17 @@
         const scoreDisplay = document.getElementById('score-display');
         const blocks = [];
         const yellowStars = [];
+        const blueTriangles = [];
         let yellowStarScore = 0;
         const STARS_TO_SPAWN_NEW = 1;
+
+        const instructionsBtn = document.getElementById('instructions-btn');
+        const instructionsModal = document.getElementById('instructions-modal');
+        const closeInstructionsBtn = document.getElementById('close-instructions');
+        const menuRestartBtn = document.getElementById('restart-btn');
+
+        const maxScoreBtn = document.getElementById('max-score-btn');
+        let maxYellowStarScore = 0;
 
         // Function to move the mouse cursor
         function moveMouse(e) {
@@ -136,11 +332,34 @@
                     yellowStars.splice(index, 1);
                     yellowStarScore++;
                     scoreDisplay.textContent = `Estrellas Tocadas: ${yellowStarScore}`;
+                    updateMaxScore(yellowStarScore);
 
-                    // Check if we should spawn a new star
+                    // Check if we should spawn a new star or triangle
                     if (yellowStarScore % STARS_TO_SPAWN_NEW === 0) {
                         createRandomYellowStar();
+                        
+                        // 10% chance to spawn a blue triangle
+                        if (Math.random() < 0.1) {
+                            createRandomBlueTriangle();
+                        }
                     }
+                }
+            });
+
+            // Check collision with blue triangles
+            blueTriangles.forEach((triangle, index) => {
+                if (isColliding(mouseCursor, triangle)) {
+                    triangle.remove();
+                    blueTriangles.splice(index, 1);
+                    
+                    // 30% chance to get 10 points, otherwise 5 points
+                    const pointsEarned = Math.random() < 0.3 ? 10 : 5;
+                    yellowStarScore += pointsEarned;
+                    scoreDisplay.textContent = `Estrellas Tocadas: ${yellowStarScore}`;
+                    updateMaxScore(yellowStarScore);
+
+                    // Spawn a new blue triangle
+                    createRandomBlueTriangle();
                 }
             });
         }
@@ -202,6 +421,26 @@
             moveBlock(star);
         }
 
+        // Function to create random blue triangles
+        function createRandomBlueTriangle() {
+            const triangle = document.createElement('div');
+            triangle.classList.add('blue-triangle');
+            
+            const size = 30;
+            triangle.style.width = `${size}px`;
+            triangle.style.height = `${size}px`;
+            
+            const x = Math.max(0, Math.min(Math.random() * (window.innerWidth - size), window.innerWidth - size));
+            const y = Math.max(0, Math.min(Math.random() * (window.innerHeight - size), window.innerHeight - size));
+            triangle.style.left = `${x}px`;
+            triangle.style.top = `${y}px`;
+            
+            document.body.appendChild(triangle);
+            blueTriangles.push(triangle);
+            
+            moveBlock(triangle);
+        }
+
         // Function to move a block or star randomly
         function moveBlock(element) {
             const elementWidth = parseInt(element.style.width);
@@ -227,13 +466,23 @@
             document.removeEventListener('mousemove', moveMouse);
         }
 
+        // Function to update max score
+        function updateMaxScore(currentScore) {
+            if (currentScore > maxYellowStarScore) {
+                maxYellowStarScore = currentScore;
+                maxScoreBtn.textContent = `Máximo: ${maxYellowStarScore}`;
+            }
+        }
+
         // Function to reset the game
         function resetGame() {
-            // Remove existing blocks and yellow stars
+            // Remove existing blocks, yellow stars, and blue triangles
             blocks.forEach(block => block.remove());
             yellowStars.forEach(star => star.remove());
+            blueTriangles.forEach(triangle => triangle.remove());
             blocks.length = 0;
             yellowStars.length = 0;
+            blueTriangles.length = 0;
 
             // Reset score
             yellowStarScore = 0;
@@ -242,25 +491,111 @@
             // Hide game over screen
             gameOverScreen.classList.remove('active');
 
-            // Recreate blocks and yellow stars
+            // Recreate blocks, yellow stars, and blue triangles
             for (let i = 0; i < 15; i++) {  
                 createRandomBlock();
                 createRandomYellowStar();
+                
+                // Spawn blue triangles at 10% of yellow star rate
+                if (Math.random() < 0.1) {
+                    createRandomBlueTriangle();
+                }
             }
 
             // Reattach event listener
             document.addEventListener('mousemove', moveMouse);
+            document.addEventListener('mousemove', (e) => {
+                moveMouse(e);
+                checkCornerTouch(e);
+            });
         }
 
-        // Create initial blocks and yellow stars
-        for (let i = 0; i < 15; i++) {  
-            createRandomBlock();
-            createRandomYellowStar();
-        }
+        // Modify the event listener to start the game when closing instructions
+        closeInstructionsBtn.addEventListener('click', () => {
+            instructionsModal.classList.remove('active');
+            document.addEventListener('mousemove', moveMouse);
+            for (let i = 0; i < 15; i++) {  
+                createRandomBlock();
+                createRandomYellowStar();
+                
+                // Spawn blue triangles at 10% of yellow star rate
+                if (Math.random() < 0.1) {
+                    createRandomBlueTriangle();
+                }
+            }
+        });
 
-        // Add event listeners
-        document.addEventListener('mousemove', moveMouse);
+        // Show instructions modal when page loads
+        window.addEventListener('load', () => {
+            // Do nothing, instructions modal is already shown
+        });
+
+        // Restart game from menu
+        menuRestartBtn.addEventListener('click', resetGame);
+
         replayBtn.addEventListener('click', resetGame);
+
+        // Corner touch tracking
+        function checkCornerTouch(e) {
+            const x = e.clientX;
+            const y = e.clientY;
+            const cornerThreshold = 50; // pixels from the edge
+
+            // Top Left
+            if (x < cornerThreshold && y < cornerThreshold) {
+                enterHallway();
+            }
+            // Top Right
+            else if (x > window.innerWidth - cornerThreshold && y < cornerThreshold) {
+                enterHallway();
+            }
+            // Bottom Left
+            else if (x < cornerThreshold && y > window.innerHeight - cornerThreshold) {
+                enterHallway();
+            }
+            // Bottom Right
+            else if (x > window.innerWidth - cornerThreshold && y > window.innerHeight - cornerThreshold) {
+                enterHallway();
+            }
+        }
+
+        function enterHallway() {
+            const hallwayScene = document.getElementById('hallway-scene');
+            const hallwayElement = document.getElementById('hallwayElement');
+            hallwayScene.style.display = 'block';
+
+            // Add click event to hallway to start walking effect
+            hallwayScene.addEventListener('click', startHallwayWalking);
+        }
+
+        function startHallwayWalking() {
+            const hallwayElement = document.getElementById('hallwayElement');
+            
+            // Remove any previous interval to prevent multiple running
+            if (window.hallwayInterval) {
+                clearInterval(window.hallwayInterval);
+            }
+
+            // Add walking class to create walking animation
+            hallwayElement.classList.add('hallway-walking');
+            
+            // Simulate moving forward in the hallway infinitely
+            let zPosition = -300;
+            window.hallwayInterval = setInterval(() => {
+                zPosition -= 100;
+                hallwayElement.style.transform = `translateZ(${zPosition}px)`;
+                
+                // Optional: reset the hallway if it goes too far
+                if (zPosition < -5000) {
+                    zPosition = -300;
+                }
+            }, 500); 
+
+            // Redirect to websim.ai after 5 seconds
+            setTimeout(() => {
+                window.location.href = 'https://websim.ai';
+            }, 5000);
+        }
     </script>
 </body>
 </html>
