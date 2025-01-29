@@ -1,0 +1,266 @@
+<html lang="es">
+<head><base href="https://example.com"/>
+    <meta charset="UTF-8">
+    <title>Ratón Sigue Ratón con Estrellas Giratorias</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(45deg, 
+                #ff0000, #ff7f00, #ffff00, 
+                #00ff00, #0000ff, #4b0082, 
+                #9400d3);
+            background-size: 400% 400%;
+            animation: rainbowBackground 15s ease infinite;
+            font-family: Arial, sans-serif;
+        }
+        @keyframes rainbowBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .mouse-cursor {
+            width: 30px; 
+            height: 30px; 
+            position: fixed;
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+            background-color: #8B4513; 
+            border-radius: 50%; 
+            z-index: 1000;
+        }
+        .red-block {
+            position: absolute;
+            background-color: red;
+            transition: transform 2s linear;
+        }
+        .yellow-star {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            background-color: yellow;
+            transition: transform 2s linear;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #game-over-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #game-over-screen.active {
+            display: flex;
+        }
+        #game-over-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        #game-over-content h1 {
+            font-size: 2.5em;
+            color: #ff0000;
+            margin-bottom: 20px;
+        }
+        #replay-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #score-display {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="mouse-cursor" id="followMouse"></div>
+    
+    <div id="game-over-screen">
+        <div id="game-over-content">
+            <h1>Perdiste papu XDDDD</h1>
+            <button id="replay-btn">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <div id="score-display">Estrellas Tocadas: 0</div>
+
+    <script>
+        const mouseCursor = document.getElementById('followMouse');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const replayBtn = document.getElementById('replay-btn');
+        const scoreDisplay = document.getElementById('score-display');
+        const blocks = [];
+        const yellowStars = [];
+        let yellowStarScore = 0;
+        const STARS_TO_SPAWN_NEW = 1;
+
+        // Function to move the mouse cursor
+        function moveMouse(e) {
+            const x = Math.max(0, Math.min(e.clientX - 15, window.innerWidth - 30));
+            const y = Math.max(0, Math.min(e.clientY - 15, window.innerHeight - 30));
+            
+            mouseCursor.style.transform = `translate(${x}px, ${y}px)`;
+            
+            // Check collision with blocks
+            blocks.forEach(block => {
+                if (isColliding(mouseCursor, block)) {
+                    gameOver();
+                }
+            });
+
+            // Check collision with yellow stars
+            yellowStars.forEach((star, index) => {
+                if (isColliding(mouseCursor, star)) {
+                    star.remove();
+                    yellowStars.splice(index, 1);
+                    yellowStarScore++;
+                    scoreDisplay.textContent = `Estrellas Tocadas: ${yellowStarScore}`;
+
+                    // Check if we should spawn a new star
+                    if (yellowStarScore % STARS_TO_SPAWN_NEW === 0) {
+                        createRandomYellowStar();
+                    }
+                }
+            });
+        }
+
+        // Function to check collision between two elements
+        function isColliding(a, b) {
+            const aRect = a.getBoundingClientRect();
+            const bRect = b.getBoundingClientRect();
+            
+            return !(
+                aRect.top > bRect.bottom ||
+                aRect.right < bRect.left ||
+                aRect.bottom < bRect.top ||
+                aRect.left > bRect.right
+            );
+        }
+
+        // Function to create random blocks
+        function createRandomBlock() {
+            const block = document.createElement('div');
+            block.classList.add('red-block');
+            
+            const size = Math.floor(Math.random() * 50) + 50;
+            block.style.width = `${size}px`;
+            block.style.height = `${size}px`;
+            
+            const x = Math.max(0, Math.min(Math.random() * (window.innerWidth - size), window.innerWidth - size));
+            const y = Math.max(0, Math.min(Math.random() * (window.innerHeight - size), window.innerHeight - size));
+            block.style.left = `${x}px`;
+            block.style.top = `${y}px`;
+            
+            document.body.appendChild(block);
+            blocks.push(block);
+            
+            moveBlock(block);
+        }
+
+        // Function to create random yellow stars
+        function createRandomYellowStar() {
+            const star = document.createElement('div');
+            star.classList.add('yellow-star');
+            
+            const size = 30;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            
+            const x = Math.max(0, Math.min(Math.random() * (window.innerWidth - size), window.innerWidth - size));
+            const y = Math.max(0, Math.min(Math.random() * (window.innerHeight - size), window.innerHeight - size));
+            star.style.left = `${x}px`;
+            star.style.top = `${y}px`;
+            
+            // Random rotation speed
+            const rotationSpeed = Math.random() * 5 + 2; // 2-7 seconds per rotation
+            star.style.animation = `rotate ${rotationSpeed}s linear infinite`;
+            
+            document.body.appendChild(star);
+            yellowStars.push(star);
+            
+            moveBlock(star);
+        }
+
+        // Function to move a block or star randomly
+        function moveBlock(element) {
+            const elementWidth = parseInt(element.style.width);
+            const elementHeight = parseInt(element.style.height);
+            
+            const newX = Math.max(0, Math.min(
+                Math.random() * (window.innerWidth - elementWidth), 
+                window.innerWidth - elementWidth
+            ));
+            const newY = Math.max(0, Math.min(
+                Math.random() * (window.innerHeight - elementHeight), 
+                window.innerHeight - elementHeight
+            ));
+            
+            element.style.transform = `translate(${newX}px, ${newY}px)`;
+            
+            setTimeout(() => moveBlock(element), Math.random() * 2000 + 1000);
+        }
+
+        // Function to handle game over
+        function gameOver() {
+            gameOverScreen.classList.add('active');
+            document.removeEventListener('mousemove', moveMouse);
+        }
+
+        // Function to reset the game
+        function resetGame() {
+            // Remove existing blocks and yellow stars
+            blocks.forEach(block => block.remove());
+            yellowStars.forEach(star => star.remove());
+            blocks.length = 0;
+            yellowStars.length = 0;
+
+            // Reset score
+            yellowStarScore = 0;
+            scoreDisplay.textContent = 'Estrellas Tocadas: 0';
+
+            // Hide game over screen
+            gameOverScreen.classList.remove('active');
+
+            // Recreate blocks and yellow stars
+            for (let i = 0; i < 15; i++) {  
+                createRandomBlock();
+                createRandomYellowStar();
+            }
+
+            // Reattach event listener
+            document.addEventListener('mousemove', moveMouse);
+        }
+
+        // Create initial blocks and yellow stars
+        for (let i = 0; i < 15; i++) {  
+            createRandomBlock();
+            createRandomYellowStar();
+        }
+
+        // Add event listeners
+        document.addEventListener('mousemove', moveMouse);
+        replayBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
